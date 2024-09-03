@@ -1,0 +1,11 @@
+
+/* src/App.css */
+@import "@fontsource/poppins"; /* Defaults to weight 400 */
+@import "@fontsource/poppins/400.css"; /* Specify the weight */
+@import "@fontsource/poppins/700.css"; /* Specify a different weight */
+
+
+* {
+  box-sizing: border-box;
+  font-family: 'Poppins';
+}
