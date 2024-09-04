@@ -1,65 +1,258 @@
-# from django.test import TestCase
-# from rest_framework.test import APIClient
-# from rest_framework import status
-# from django.urls import reverse
-# from .models import LoanPlan, LoanRequest, Loan
-# from users.models import User, Customer, BankPersonnel
-# from funds.models import BaseLoanFund
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from .models import LoanPlan, LoanRequest, Loan, LoanPayment
+from funds.models import BaseLoanFund
+from users.models import Customer, BankPersonnel
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
+from django.urls import reverse
+from .models import LoanPlan, LoanRequest, Loan, LoanPayment
+from funds.models import BaseLoanFund
+from users.models import User, Customer, BankPersonnel
 
-# class LoanTests(TestCase):
 
-#     def setUp(self):
-#         self.client = APIClient()
-        
-#         # Create BankPersonnel and Customer users
-#         self.bank_personnel = User.objects.create_user(
-#             username='bankpersonnel', password='password123', email='bankpersonnel@example.com', is_bank_personnel=True)
-#         self.customer = User.objects.create_user(
-#             username='customer', password='password123', email='customer@example.com', is_customer=True)
-        
-#         # Create Customer profile
-#         self.customer_profile = Customer.objects.create(
-#             user=self.customer, balance=1000, credit_score=750, salary=5000, age=30)
+User = get_user_model()
+
+class BaseLoanFundModelTest(TestCase):
+    def test_create_base_loan_fund(self):
+        fund = BaseLoanFund.objects.create(
+            type='BIG', 
+            start_fund=1000000, 
+            current_value=1000000
+        )
+        self.assertEqual(fund.type, 'BIG')
+        self.assertEqual(fund.start_fund, 1000000)
+        self.assertEqual(fund.current_value, 1000000)
+        self.assertIsNotNone(fund.created_at)
+
+class LoanPlanModelTest(TestCase):
+    def test_create_loan_plan(self):
+        fund = BaseLoanFund.objects.create(
+            type='MEDIUM', 
+            start_fund=500000, 
+            current_value=500000
+        )
+        loan_plan = LoanPlan.objects.create(
+            name='Home Loan', 
+            loan_fund=fund, 
+            interest_rate=5.0, 
+            min_value=10000, 
+            max_value=50000, 
+            duration=12
+        )
+        self.assertEqual(loan_plan.name, 'Home Loan')
+        self.assertEqual(loan_plan.loan_fund, fund)
+        self.assertEqual(loan_plan.interest_rate, 5.0)
+        self.assertEqual(loan_plan.min_value, 10000)
+        self.assertEqual(loan_plan.max_value, 50000)
+        self.assertEqual(loan_plan.duration, 12)
+
+class LoanRequestModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='customer', 
+            password='testpassword',
+            email='customer@example.com',
+            is_customer=True
+        )
+        self.customer = Customer.objects.create(user=self.user, age=30, salary=3000)
+        self.fund = BaseLoanFund.objects.create(
+            type='SMALL', 
+            start_fund=100000, 
+            current_value=100000
+        )
+        self.loan_plan = LoanPlan.objects.create(
+            name='Personal Loan', 
+            loan_fund=self.fund, 
+            interest_rate=10.0, 
+            min_value=5000, 
+            max_value=20000, 
+            duration=6
+        )
+
+    def test_create_loan_request(self):
+        loan_request = LoanRequest.objects.create(
+            loan_plan=self.loan_plan, 
+            user=self.customer, 
+            principal=5000, 
+            total=5500, 
+            request_status='PENDING'
+        )
+        self.assertEqual(loan_request.loan_plan, self.loan_plan)
+        self.assertEqual(loan_request.user, self.customer)
+        self.assertEqual(loan_request.principal, 5000)
+        self.assertEqual(loan_request.total, 5500)
+        self.assertEqual(loan_request.request_status, 'PENDING')
+
+class LoanModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='customer', 
+            password='testpassword',
+            email='customer@example.com',
+            is_customer=True
+        )
+        self.customer = Customer.objects.create(user=self.user, age=30, salary=3000)
+        self.fund = BaseLoanFund.objects.create(
+            type='SMALL', 
+            start_fund=100000, 
+            current_value=100000
+        )
+        self.loan_plan = LoanPlan.objects.create(
+            name='Personal Loan', 
+            loan_fund=self.fund, 
+            interest_rate=10.0, 
+            min_value=5000, 
+            max_value=20000, 
+            duration=6
+        )
+        self.loan_request = LoanRequest.objects.create(
+            loan_plan=self.loan_plan, 
+            user=self.customer, 
+            principal=5000, 
+            total=5500, 
+            request_status='PENDING'
+        )
+
+    def test_create_loan(self):
+        loan = Loan.objects.create(
+            loan_plan=self.loan_plan, 
+            user=self.customer, 
+            paid=0, 
+            total=5500
+        )
+        self.assertEqual(loan.loan_plan, self.loan_plan)
+        self.assertEqual(loan.user, self.customer)
+        self.assertEqual(loan.paid, 0)
+        self.assertEqual(loan.total, 5500)
+
+class LoanPaymentModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='customer', 
+            password='testpassword',
+            email='customer@example.com',
+            is_customer=True
+        )
+        self.customer = Customer.objects.create(user=self.user, age=30, salary=3000)
+        self.fund = BaseLoanFund.objects.create(
+            type='SMALL', 
+            start_fund=100000, 
+            current_value=100000
+        )
+        self.loan_plan = LoanPlan.objects.create(
+            name='Personal Loan', 
+            loan_fund=self.fund, 
+            interest_rate=10.0, 
+            min_value=5000, 
+            max_value=20000, 
+            duration=6
+        )
+        self.loan = Loan.objects.create(
+            loan_plan=self.loan_plan, 
+            user=self.customer, 
+            paid=0, 
+            total=5500
+        )
+
+    def test_create_loan_payment(self):
+        payment = LoanPayment.objects.create(
+            loan=self.loan, 
+            amount=1000, 
+            user=self.customer
+        )
+        self.assertEqual(payment.loan, self.loan)
+        self.assertEqual(payment.amount, 1000)
+        self.assertEqual(payment.user, self.customer)
+        self.assertIsNotNone(payment.paid_at)
+
+
+class LoanPlanViewSetTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='personnel', 
+            password='testpassword',
+            email='personnel@example.com',
+            is_bank_personnel=True
+        )
+        self.bank_personnel = BankPersonnel.objects.create(user=self.user)
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        self.fund = BaseLoanFund.objects.create(
+            type='MEDIUM', 
+            start_fund=500000, 
+            current_value=500000
+        )
+        self.loan_plan_data = {
+            'name': 'Car Loan',
+            'loan_fund': self.fund.id,
+            'interest_rate': 7.0,
+            'min_value': 10000,
+            'max_value': 30000,
+            'duration': 24
+        }
+
+    def test_create_loan_plan(self):
+        response = self.client.post(reverse('loan-plan-create'), self.loan_plan_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(LoanPlan.objects.count(), 1)
+        self.assertEqual(LoanPlan.objects.get().name, 'Car Loan')
+
+    def test_list_loan_plans(self):
        
-#         self.bank_personnel_profile = BankPersonnel.objects.create(user=self.bank_personnel)
-
-#         # Create BaseLoanFund and LoanPlan
-#         self.fund = BaseLoanFund.objects.create(type='BIG', start_fund=100000, current_value=100000)
-#         self.loan_plan = LoanPlan.objects.create(
-#             loan_fund=self.fund, name='Standard Loan', interest_rate=5, max_value=50000, min_value=300, duration=12)
+        self.loan_plan_data['loan_fund'] = self.fund
+        LoanPlan.objects.create(**self.loan_plan_data)
         
-#         # Define URLs for testing
-#         self.loan_request_url = reverse('loan-request-apply')
-#         self.loan_url = reverse('loan-list')
+        response = self.client.get(reverse('loan-plan-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
 
-#     def test_loan_request(self):
-#         self.client.force_authenticate(user=self.customer)
-#         data = {
-#             'loan_plan': self.loan_plan.id,
-#             'principal': 5000,
-#             'total': 5250,  # Principal + 5% interest
-#             'request_status': 'PENDING'  # Assuming default is pending
-#         }
-#         response = self.client.post(self.loan_request_url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         self.assertEqual(LoanRequest.objects.count(), 1)
 
-#     def test_loan_creation(self):
-#         # Create a LoanRequest instance with approved status
-#         loan_request = LoanRequest.objects.create(
-#             loan_plan=self.loan_plan,
-#             user=self.customer_profile,
-#             principal=5000,
-#             total=5250,  # Principal + 5% interest
-#             request_status='APPROVED',
-#             loan_officer=self.bank_personnel_profile  # Use BankPersonnel instance here
-#         )
-        
-#         self.client.force_authenticate(user=self.bank_personnel)
-#         data = {
-#             'loan_request': loan_request.id
-#         }
-#         response = self.client.post(self.loan_url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         self.assertEqual(Loan.objects.count(), 1)
-#         self.assertEqual(response.data['total'], 5250)  # Total loan amount
+
+class LoanRequestViewSetTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='customer', 
+            password='testpassword',
+            email='customer@example.com',
+            is_customer=True
+        )
+        self.customer = Customer.objects.create(user=self.user, age=30, salary=3000)
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)  # Auth as customer
+        self.fund = BaseLoanFund.objects.create(
+            type='SMALL', 
+            start_fund=100000, 
+            current_value=100000
+        )
+        self.loan_plan = LoanPlan.objects.create(
+            name='Personal Loan', 
+            loan_fund=self.fund, 
+            interest_rate=10.0, 
+            min_value=5000, 
+            max_value=20000, 
+            duration=6
+        )
+        self.loan_request_data = {
+            'loan_plan': self.loan_plan.id,  # Ensure correct ID is passed
+            'principal': 5000,
+            'total': 5500,
+            'request_status': 'PENDING'
+        }
+def test_check_loan_request_status(self):
+   
+    loan_request = LoanRequest.objects.create(
+        loan_plan=self.loan_plan, 
+        user=self.customer,  
+        principal=5000, 
+        total=5500, 
+        request_status='PENDING'
+    )
+    self.client.force_login(self.customer.user)
+
+    url = reverse('loan-request-status')
+    response = self.client.get(url)
+    self.assertEqual(response.status_code, status.HTTP_200_OK)
+    self.assertEqual(response.data['principal'], loan_request.principal)
+    self.assertEqual(response.data['total'], loan_request.total)
+    self.assertEqual(response.data['request_status'], loan_request.request_status)

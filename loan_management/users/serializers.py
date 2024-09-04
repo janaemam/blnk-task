@@ -19,20 +19,20 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
                   'credit_score', 'salary', 'age', 'dependents')
 
     def validate(self, data):
-        # Validate that passwords match
+        
         if data.get('password') != data.get('confirm_password'):
             raise serializers.ValidationError({"confirm_password": "Passwords must match."})
         return data
 
     def create(self, validated_data):
-        # Extract customer-specific data
+      
         balance = validated_data.pop('balance', 0)
         credit_score = validated_data.pop('credit_score', 800)
         salary = validated_data.pop('salary', 0)
         age = validated_data.pop('age')
         dependents = validated_data.pop('dependents', 0)
 
-        # Create the User instance
+        
         user = User(
             username=validated_data['username'],
             first_name=validated_data['first_name'],
@@ -43,7 +43,7 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
 
-        # Create associated Customer profile
+       
         Customer.objects.create(
             user=user,
             balance=balance,

@@ -85,7 +85,7 @@ class LoanRequestViewSet(viewsets.ModelViewSet):
     def calculate_total(self, principal, loan_plan):
         """Calculate the total amount to be repaid based on the principal and loan plan."""
         interest_rate = loan_plan.interest_rate
-        total = principal * (1 + (interest_rate / 100))  # Simplistic calculation
+        total = principal * (1 + (interest_rate / 100))  
         return total
 
     @action(detail=True, methods=['post'])

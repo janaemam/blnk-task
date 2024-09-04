@@ -22,9 +22,9 @@ class LoanRequest(models.Model):
     principal = models.FloatField()
     total = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)  # Same auto_now update
+    updated_at = models.DateTimeField(auto_now=True) 
     request_status = models.CharField(max_length=50, choices=[('PENDING', 'Pending'), ('APPROVED','Approved'),('REJECTED','Rejected')])
-    loan_officer = models.ForeignKey('users.BankPersonnel', on_delete=models.SET_NULL, null=True)  # Loan officer can be optional
+    loan_officer = models.ForeignKey('users.BankPersonnel', on_delete=models.SET_NULL, null=True)  
 
 
     def __str__(self):
@@ -34,7 +34,7 @@ class Loan(models.Model):
     loan_plan = models.ForeignKey(LoanPlan, on_delete=models.CASCADE)
     user = models.ForeignKey('users.Customer', on_delete=models.CASCADE)
     paid = models.FloatField()
-    total = models.FloatField()  # Store the total loan amount directly
+    total = models.FloatField()  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

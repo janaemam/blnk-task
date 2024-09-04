@@ -62,7 +62,6 @@ class BankPersonnelHomeView(APIView):
     permission_classes = [IsAuthenticated, IsBankPersonnel]
 
     def get(self, request, *args, **kwargs):
-        # Your logic for bank personnel home view
         return Response({"message": "Welcome Bank Personnel!"})
     
 
