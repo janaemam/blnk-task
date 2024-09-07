@@ -4,6 +4,7 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth import authenticate, login, logout
 from .serializers import CustomerRegistrationSerializer, LoginSerializer
 from .permissions import IsBankPersonnel, IsCustomer, IsFundProvider
@@ -42,11 +43,13 @@ class LoginView(APIView):
                 password=serializer.validated_data['password']
             )
             if user is not None:
+                token, created = Token.objects.get_or_create(user=user)
                 login(request, user)
                 return Response({
                     'message': 'Login successful',
                     'role': 'customer' if user.is_customer else 'fund_provider' if user.is_fund_provider else 'bank_personnel',
-                    'name' : user.first_name
+                    'name' : user.first_name,
+                    'token': token.key,
                 })
             return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -56,24 +59,25 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        request.user.auth_token.delete()
         logout(request)
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
 class CustomerHomeView(APIView):
     permission_classes = [IsAuthenticated, IsCustomer]
-
+    authentication_classes = [TokenAuthentication]
     def get(self, request, *args, **kwargs):
         return Response({"message": "Welcome Customer!"})
 
 class FundProviderHomeView(APIView):
     permission_classes = [IsAuthenticated, IsFundProvider]
-
+    authentication_classes = [TokenAuthentication]
     def get(self, request, *args, **kwargs):
         
         return Response({"message": "Welcome Fund Provider!"})
 
 class BankPersonnelHomeView(APIView):
     permission_classes = [IsAuthenticated, IsBankPersonnel]
-
+    authentication_classes = [TokenAuthentication]
     def get(self, request, *args, **kwargs):
         return Response({"message": "Welcome Bank Personnel!"})
     

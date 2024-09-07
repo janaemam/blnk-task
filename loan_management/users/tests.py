@@ -3,6 +3,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.urls import reverse
 from .models import User, Customer
+from rest_framework.authtoken.models import Token
 
 class UserTests(TestCase):
 
@@ -42,6 +43,10 @@ class UserTests(TestCase):
 
     def test_user_logout(self):
         user = User.objects.create_user(username='testuser', password='password123', is_customer=True)
-        self.client.force_authenticate(user=user)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token '+ token.key)
+        
         response = self.client.post(self.logout_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Token.objects.filter(user=user).exists())
+

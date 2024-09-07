@@ -31,17 +31,21 @@ function CustomerRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Submit the form data to the backend
+    
     try {
       const response = await axios.post('http://localhost:8000/api/register/', formData, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response);  // Handle success (e.g., navigate to another page or show a success message)
-      navigate('/login')
+      if (response.status === 201) {
+        localStorage.setItem('token', response.data.token);
+        window.location.href = '/customer-home'; 
+    }
+      console.log(response);  
+      // navigate('/login')
     } catch (error) {
-      console.error(error.response);  // Handle error (e.g., show error message)
+      console.error(error.response);  
     }
 
   };
