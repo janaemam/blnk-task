@@ -3,9 +3,11 @@ from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
 from .serializers import CustomerRegistrationSerializer, LoginSerializer
 from .permissions import IsBankPersonnel, IsCustomer, IsFundProvider
+from .models import User
 
 
 class CustomerRegisterView(CreateAPIView):
@@ -15,7 +17,18 @@ class CustomerRegisterView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         request.data['is_bank_personnel'] = False
         request.data['is_fund_provider'] = False
-        return super().create(request, *args, **kwargs)
+        response = super(). create(request, *args, **kwargs)
+
+        user = User.objects.get(username=request.data['username'])
+        
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'message': 'Registration successful',
+            'token': token.key,
+            'role': 'customer',
+            'name': user.first_name
+        }, status=status.HTTP_201_CREATED)
+
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -32,7 +45,8 @@ class LoginView(APIView):
                 login(request, user)
                 return Response({
                     'message': 'Login successful',
-                    'role': 'customer' if user.is_customer else 'fund_provider' if user.is_fund_provider else 'bank_personnel'
+                    'role': 'customer' if user.is_customer else 'fund_provider' if user.is_fund_provider else 'bank_personnel',
+                    'name' : user.first_name
                 })
             return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -48,14 +62,13 @@ class CustomerHomeView(APIView):
     permission_classes = [IsAuthenticated, IsCustomer]
 
     def get(self, request, *args, **kwargs):
-        # Your logic for customer home view
         return Response({"message": "Welcome Customer!"})
 
 class FundProviderHomeView(APIView):
     permission_classes = [IsAuthenticated, IsFundProvider]
 
     def get(self, request, *args, **kwargs):
-        # Your logic for fund provider home view
+        
         return Response({"message": "Welcome Fund Provider!"})
 
 class BankPersonnelHomeView(APIView):

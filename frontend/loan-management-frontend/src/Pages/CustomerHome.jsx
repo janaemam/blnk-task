@@ -29,7 +29,7 @@ function CustomerHome() {
 
     useEffect(() => {
         // Fetch loan plans
-        axios.get('http://localhost:8000/api/check-auth/')
+        axios.get('http://localhost:8000/api/loan-plans/',{ withCredentials: true })
             .then(response => setLoanPlans(response.data))
             .catch(error => setError('Error fetching loan plans'));
     }, []);
